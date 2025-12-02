@@ -61,7 +61,7 @@ const buildFilename = (svgName) => {
     // { name: 'caract-left', state: 'default', size: '24px' }
     const attributes = svgName.split(',').map(attr => {
       const [key, value] = attr.split('=');
-      return { key, value };
+      return { key: key.toLowerCase(), value };
     }).reduce((obj, item) => {
       obj[item.key] = item.value;
       return obj;
