@@ -5,7 +5,6 @@ const figmaRestApi = require('./util/figmaRestApi');
 const Utils = require('./util/utils');
 const outputFolder = process.env.FIGMA_ICONS_OUTPUT_FOLDER || './icons/';
 const rateLimit = 20;
-const waitTimeInSeconds = 30;
 
 const ICON_SIZES = ['24px', '16px'];
 
@@ -139,13 +138,6 @@ const svgExporter = async () => {
       });
 
       await Promise.all(requests);
-      console.log(`Wait for ${waitTimeInSeconds} seconds`);
-      await new Promise((resolve) => {
-        setTimeout(() => {
-          console.log(`${waitTimeInSeconds} seconds!`);
-          resolve();
-        }, waitTimeInSeconds * 1000);
-      });
     }
   } catch (err) {
     console.error(err);
