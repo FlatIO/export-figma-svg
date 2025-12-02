@@ -138,20 +138,18 @@ const svgExporter = async () => {
         );
       });
 
-      await Promise.all(requests)
-        .then(() => {
-          console.log(`Wait for ${waitTimeInSeconds} seconds`);
-          return new Promise((resolve) => {
-            setTimeout(() => {
-              console.log(`${waitTimeInSeconds} seconds!`);
-              resolve();
-            }, waitTimeInSeconds * 1000);
-          });
-        })
-        .catch((err) => console.error(`Error proccessing ${i} - Error ${err}`));
+      await Promise.all(requests);
+      console.log(`Wait for ${waitTimeInSeconds} seconds`);
+      await new Promise((resolve) => {
+        setTimeout(() => {
+          console.log(`${waitTimeInSeconds} seconds!`);
+          resolve();
+        }, waitTimeInSeconds * 1000);
+      });
     }
   } catch (err) {
     console.error(err);
+    process.exit(1);
   }
 };
 
