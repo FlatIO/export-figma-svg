@@ -1,10 +1,11 @@
 const fs = require("fs");
+const path = require("path");
 
 const writeToFile = async (filename, data) => {
-  return fs.writeFile(filename, data, (error) => {
-    if (error) throw error;
-    console.log(`The file ${filename} has been saved!`);
-  });
+  const dir = path.dirname(filename);
+  await fs.promises.mkdir(dir, { recursive: true });
+  await fs.promises.writeFile(filename, data);
+  console.log(`The file ${filename} has been saved!`);
 };
 
 const camelCaseToDash = (string) => {
