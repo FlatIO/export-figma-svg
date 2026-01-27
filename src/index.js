@@ -6,8 +6,6 @@ const Utils = require('./util/utils');
 const outputFolder = process.env.FIGMA_ICONS_OUTPUT_FOLDER || './icons/';
 const rateLimit = 2;
 
-const ICON_SIZES = ['24px', '16px'];
-
 const getProjectNode = async () => {
   return await figmaRestApi.get(
     `files/${process.env.FIGMA_PROJECT_ID}/nodes?ids=${process.env.FIGMA_PROJECT_NODE_ID}`
@@ -99,8 +97,10 @@ const svgExporter = async () => {
       process.env.FIGMA_PROJECT_NODE_ID
     ].document.children;
 
-    // Filter different icon size from single frame
-    const iconFrame = rootFrame.filter(frame => ICON_SIZES.includes(frame.name) || frame.type === 'COMPONENT_SET');
+    // Include all frames/groups for recursive extraction of COMPONENT_SETs
+    const iconFrame = rootFrame.filter(frame =>
+      frame.type === 'COMPONENT_SET' || frame.type === 'FRAME' || frame.type === 'GROUP'
+    );
     
     // Top level svgs
     let svgs = extractFigmaGroup(iconFrame);
