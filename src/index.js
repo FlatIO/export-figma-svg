@@ -78,6 +78,16 @@ const buildFilename = (svgName) => {
       svgName += `-${attributes.style}`;
     }
 
+    // Handle additional variant properties (e.g. Voice=Voice1)
+    const knownKeys = ['name', 'size', 'state', 'style'];
+    const extraKeys = Object.keys(attributes)
+      .filter(key => !knownKeys.includes(key))
+      .sort();
+
+    for (const key of extraKeys) {
+      svgName += `-${attributes[key]}`;
+    }
+
     return svgName;
   }
 
