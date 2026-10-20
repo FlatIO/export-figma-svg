@@ -1,10 +1,13 @@
 require('dotenv').config();
 const path = require('node:path');
-const axios = require('axios');
 const figmaRestApi = require('./util/figmaRestApi');
+const { downloadClient } = require('./util/figmaRestApi');
 const Utils = require('./util/utils');
 const outputFolder = process.env.FIGMA_ICONS_OUTPUT_FOLDER || './icons/';
-const rateLimit = 2;
+// Icons rendered per images request (the endpoint takes a list of ids)
+const imagesBatchSize = 50;
+// Parallel SVG downloads (S3, not rate limited by Figma)
+const downloadConcurrency = 4;
 
 const getProjectNode = async () => {
   return await figmaRestApi.get(
@@ -12,10 +15,11 @@ const getProjectNode = async () => {
   );
 };
 
-const getSVGURL = async (id) => {
-  return await figmaRestApi.get(
-    `images/${process.env.FIGMA_PROJECT_ID}/?ids=${id}&format=svg`
+const getSVGURLs = async (ids) => {
+  const response = await figmaRestApi.get(
+    `images/${process.env.FIGMA_PROJECT_ID}/?ids=${ids.join(',')}&format=svg`
   );
+  return response.data.images;
 };
 
 const extractFigmaGroup = (children) => {
@@ -124,33 +128,37 @@ const svgExporter = async () => {
 
     console.log('Number of SVGs', numOfSvgs);
 
-    for (i = 0; i < numOfSvgs; i += rateLimit) {
-      const requests = svgs.slice(i, i + rateLimit).map(async (svg) => {
-        // Normalize SVG name
-        const svgName = buildFilename(svg.name);
+    const files = svgs.map(svg => {
+      // Normalize SVG name
+      const svgName = buildFilename(svg.name);
+      if (!svgName) {
+        console.error(`Error processing ${svg.name}`);
+      }
+      return { svg, svgName };
+    }).filter(({ svgName }) => svgName);
 
-        if (!svgName) {
-          console.error(`Error processing ${svg.name}`);
-          return;
-        }
+    for (let i = 0; i < files.length; i += imagesBatchSize) {
+      const batch = files.slice(i, i + imagesBatchSize);
+      const urls = await getSVGURLs(batch.map(({ svg }) => svg.id));
 
-        // Create subdirectories for icon (e.g. svg/16px/name.svg)
-        await Utils.createFolder(path.join(outputFolder, path.dirname(svgName)));
+      for (let j = 0; j < batch.length; j += downloadConcurrency) {
+        await Promise.all(batch.slice(j, j + downloadConcurrency).map(async ({ svg, svgName }) => {
+          const url = urls[svg.id];
+          if (!url) {
+            throw new Error(`Figma rendered no SVG for ${svg.name} (${svg.id})`);
+          }
 
-        const svgURL = await getSVGURL(svg.id);
-
-        // Get SVG DOM
-        const svgDOM = await axios.get(svgURL.data.images[svg.id]);
-        Utils.writeToFile(
-          path.join(outputFolder, `${Utils.camelCaseToDash(svgName)}.svg`),
-          svgDOM.data
-        );
-      });
-
-      await Promise.all(requests);
+          // Get SVG DOM
+          const svgDOM = await downloadClient.get(url);
+          await Utils.writeToFile(
+            path.join(outputFolder, `${Utils.camelCaseToDash(svgName)}.svg`),
+            svgDOM.data
+          );
+        }));
+      }
     }
   } catch (err) {
-    console.error(err);
+    console.error(err.isAxiosError ? `${err.message} (${err.code ?? err.response?.status}: ${err.config?.url})` : err);
     process.exit(1);
   }
 };
