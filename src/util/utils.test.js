@@ -34,3 +34,31 @@ describe('Filter Private Components ', () => {
     ])
   })
 })
+
+describe('Containers', () => {
+  const section = name => ({ type: 'SECTION', name });
+  const options = { includeSections: true, excludedSections: Utils.parseNameList(' 🔍 To review by design , Archive') };
+
+  it('walks groups and frames whatever the options', () => {
+    expect(Utils.isContainer({ type: 'GROUP', name: 'g' }, { includeSections: false, excludedSections: [] })).toBe(true);
+    expect(Utils.isContainer({ type: 'FRAME', name: 'f' }, options)).toBe(true);
+  });
+
+  it('skips sections unless included', () => {
+    expect(Utils.isContainer(section('Icons'), { includeSections: false, excludedSections: [] })).toBe(false);
+    expect(Utils.isContainer(section('Icons'), options)).toBe(true);
+  });
+
+  it('skips the excluded sections by trimmed name', () => {
+    expect(Utils.isContainer(section('🔍 To review by design'), options)).toBe(false);
+    expect(Utils.isContainer(section('Archive '), options)).toBe(false);
+  });
+
+  it('never walks into components or component sets', () => {
+    expect(Utils.isContainer({ type: 'COMPONENT_SET', name: 's' }, options)).toBe(false);
+  });
+
+  it('reads an unset list as empty', () => {
+    expect(Utils.parseNameList(undefined)).toEqual([]);
+  });
+});

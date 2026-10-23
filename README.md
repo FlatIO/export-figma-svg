@@ -29,6 +29,8 @@ Your SVGs will be generated in `src/svg` folder
 
 ### Filtering Private Components (starting with a . or a _)
 1. If you want to ignore / filter private components that start with a . or _, change the FILTER_PRIVATE_COMPONENTS variable to `true`. Thanks to [lennertVanSever for their contribution to this](https://github.com/jacobtyq/export-figma-svg/pull/27)
+### Sections
+Sections are skipped by default. Set `INCLUDE_SECTIONS=true` to walk them like frames, and list the sections to keep skipping in `EXCLUDE_SECTIONS` (comma-separated names, e.g. a review area holding drafts).
 ### Limitations
 
 Figma API has a fixed number of requests (rate limits) you can call per minute. This script will process a 20 requests per 45 seconds to avoid hitting that limit.

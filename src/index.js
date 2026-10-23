@@ -22,6 +22,14 @@ const getSVGURLs = async (ids) => {
   return response.data.images;
 };
 
+// Opt-in: walk SECTION nodes like frames, except the ones named in EXCLUDE_SECTIONS
+// (comma-separated, e.g. a review area whose drafts must not ship)
+const sectionOptions = {
+  includeSections: process.env.INCLUDE_SECTIONS === 'true',
+  excludedSections: Utils.parseNameList(process.env.EXCLUDE_SECTIONS),
+};
+const isContainer = (node) => Utils.isContainer(node, sectionOptions);
+
 const extractFigmaGroup = (children) => {
   const svgs = [];
 
@@ -43,7 +51,7 @@ const extractFigmaGroup = (children) => {
   });
 
   // Sub-groups
-  const groups = children.filter(c => c.type === 'GROUP' || c.type === 'FRAME');
+  const groups = children.filter(isContainer);
   groups.forEach(group => {
     const groupComponents = extractFigmaGroup(group.children);
     if (groupComponents.length > 0) {
@@ -112,9 +120,7 @@ const svgExporter = async () => {
     ].document.children;
 
     // Include all frames/groups for recursive extraction of COMPONENT_SETs
-    const iconFrame = rootFrame.filter(frame =>
-      frame.type === 'COMPONENT_SET' || frame.type === 'FRAME' || frame.type === 'GROUP'
-    );
+    const iconFrame = rootFrame.filter(frame => frame.type === 'COMPONENT_SET' || isContainer(frame));
     
     // Top level svgs
     let svgs = extractFigmaGroup(iconFrame);
