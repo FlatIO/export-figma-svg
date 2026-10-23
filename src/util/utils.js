@@ -32,8 +32,18 @@ const createFolder = async (path) => {
 
 const filterPrivateComponents = svgs => svgs.filter(({ name }) => !name.startsWith('.') && !name.startsWith('_'))
 
+const parseNameList = (value) => (value || '').split(',').map(name => name.trim()).filter(name => name !== '');
+
+// A node whose children are walked for components: groups and frames, and sections when included
+const isContainer = (node, { includeSections, excludedSections }) => {
+  if (node.type === 'GROUP' || node.type === 'FRAME') return true;
+  return includeSections && node.type === 'SECTION' && !excludedSections.includes(node.name.trim());
+};
+
 exports.writeToFile = writeToFile;
 exports.camelCaseToDash = camelCaseToDash;
 exports.flattenArray = flattenArray;
 exports.createFolder = createFolder;
 exports.filterPrivateComponents = filterPrivateComponents;
+exports.parseNameList = parseNameList;
+exports.isContainer = isContainer;
